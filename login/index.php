@@ -26,6 +26,7 @@ if(!$ready && $submit) {
         <button class='primary-btn' onclick="location.href='?'">Go back</a>
     </main>
 </body>
+</html>
 <?
 } else if(!$submit) {
 ?>
@@ -44,6 +45,11 @@ if(!$ready && $submit) {
                 id="pass" type="password" name="pass" placeholder="Enter your password"
                 aria-label = "Enter Password: " aria-invalid="true" required
             >
+            <fieldset>
+                <input
+                    type="checkbox" name="checkbox" role="switch" aria-label="Remember Me"
+                > Remember Me
+            </fieldset>
             <input class='primary-btn' type='submit' value='Login' name='submit'>
             <a href="/ShellChat/register/">Not registered yet, Click here to register</a>
         </form>
@@ -53,22 +59,61 @@ if(!$ready && $submit) {
 <?php
 } else {
     try {
-        $conn = new PDO("mysql:host=localhost;dbname=ShellChat", "root", "", [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
-        // to-do
-        // implement login
-    } catch (\PDOException $e) {
+        
+        // set up a new connection
+        $conn = new PDO(
+            "mysql:host=localhost;dbname=ShellChat", "root", "", [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]
+        );
+
+        // set up attr for anti - seql injection
+        $conn->setAttribute(PDO::ATTR_EMULATE_PREPARES, 0);
+
+        // prepare & execute statement
+        $stmt = $conn->prepare("SELECT * FROM Users WHERE email=:email AND passw_hash=:pwhash");
+        $stmt->execute(['email'=>$_POST['email'], 'pwhash'=>hash('sha256', $_POST['pass'])]);
+        
+        // fetch result
+        $user = $stmt -> fetch() ?? null;
+        // close connection
+        $conn = null;
+        if(!$user) {
 ?>
 <body>
     <main class="container" style="width:40%; min-width:500px" align="center">
         <hgroup>
-            <h1>ShellChat Database Error</h1>
-            <h2>Server side database error</h2>
+            <h1>ShellChat Login - ERROR</h1>
+            <h2>Attempt to login with invalid info</h2>
         </hgroup>
-        <h2>Internal server error - share with developers</h2>
-        <p>Error: <?php echo $e->getMessage();?><br>Errcode: <?php echo (int)$e->getCode(); ?></p>
+        <h1>Invalid input found while processing in backend side.</h1>
         <button class='primary-btn' onclick="location.href='?'">Go back</a>
     </main>
 </body>
+</html>
+<?php
+        } else {
+            // store for 1 min if remember me is not choosen, else store it for 20 days!
+            $time = ( $_POST['checkbox'] ?? 0 ) ? 86400*20: 60;
+            setcookie("id", $user['id'], $time);
+            setcookie("auth", $user['passw_hash'], $time);
+            header('location: /ShellChat/');
+        }
+
+    } catch (\PDOException $e) {
+?>
+<body>
+    <main class="container" align="center">
+        <hgroup>
+            <h1>ShellChat Database Error</h1>
+            <h2>Server side database error - reloading may resolve problem.</h2>
+        </hgroup>
+        <h2>Internal server error - share with developers</h2>
+        <p>Error: <?php echo $e->getMessage();?><br>Errcode: <?php echo (int)$e->getCode(); ?></p>
+        <div class="container" style="width:50%; min-width:500px">
+            <button class='primary-btn' onclick="location.href='?'">Go back</a>
+        </div>
+    </main>
+</body>
+</html>
 <?
     }
 }
