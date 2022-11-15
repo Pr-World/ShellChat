@@ -69,7 +69,7 @@ if ($submit && !$ready) {
         $conn->setAttribute(PDO::ATTR_EMULATE_PREPARES, 0);
 
         // check if user already exists
-        $stmt = $conn->prepare("SELECT * FROM Users WHERE email=:email")
+        $stmt = $conn->prepare("SELECT * FROM Users WHERE email=:email");
         $stmt->execute([':email'=>$_POST['email']]);
         $exists = $stmt->fetch() ?? null;
         // to-do check if user exists & refrain - done
@@ -90,8 +90,10 @@ if ($submit && !$ready) {
 <?php
         } else {
             // prepare & execute statement
-            $stmt = $conn->prepare("INSERT INTO Users(Name,passw_hash,email) VALUES (:name, :pwhash, :email)");
-            $stmt->execute([':name'=>$_POST['name'],'email'=>$_POST['email'], 'pwhash'=>hash('sha256', $_POST['pass'])]);
+            $stmt = $conn->prepare("INSERT INTO Users(Name,auth_token,email) VALUES (:name, :auth, :email)");
+            $stmt->execute([':name'=>$_POST['name'],'email'=>$_POST['email'], 'auth'=>hash(
+                'sha256',"%^&ShElLcHaTaUtH--".$_POST['email'].$_POST['pass']."--&%^sHeLlChAtAuTh"
+            )]);
             // close connection
             $conn = null;
 ?>

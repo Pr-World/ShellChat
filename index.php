@@ -1,6 +1,7 @@
 <?php
 $uname = $_COOKIE['id'] ?? 0;
 $passw = $_COOKIE['auth'] ?? 0;
+
 if (!$uname || !$passw) { header('location: login/'); }
 // to-do
 // make a proper dashboard to chat with others, probably in a holiday im too lazzzyyyzyzyzyzyzy
@@ -13,8 +14,8 @@ try {
     $conn->setAttribute(PDO::ATTR_EMULATE_PREPARES, 0);
 
     // prepare & execute statement
-    $stmt = $conn->prepare("SELECT * FROM Users WHERE id=:id AND passw_hash=:auth");
-    $stmt->execute(['id'=>$_POST['id'], 'pwhash'=>$_POST['auth']);
+    $stmt = $conn->prepare("SELECT * FROM Users WHERE id=:id AND auth_token=:auth");
+    $stmt->execute(['id'=>$uname, 'auth'=>$passw]);
 
     $user = $stmt->fetch() ?? null;
     // close the connection
@@ -25,7 +26,7 @@ try {
     } else {    
         $name = $user['Name'];
         $id = $user['id'];
-        $pw_hash = $user['passw_hash'];
+        $auth = $user['auth_token'];
         $mailid = $user['email'];
 ?>
 <!DOCTYPE html>
@@ -40,11 +41,11 @@ try {
     <script defer src="script.js"></script>
 </head>
 <body>
-    <div class='container'>
-        <header>
+    <div class='container' align="center">
+        <hgroup>
             <h1>ShellChat - DashBoard</h1>
             <h2>Welcome to ShellChat - <?php echo $name; ?></h2>
-        </header>
+        </hgroup>
     </div>
 </body>
 <?php

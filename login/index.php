@@ -59,7 +59,6 @@ if(!$ready && $submit) {
 <?php
 } else {
     try {
-        
         // set up a new connection
         $conn = new PDO(
             "mysql:host=localhost;dbname=ShellChat", "root", "", [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]
@@ -69,8 +68,10 @@ if(!$ready && $submit) {
         $conn->setAttribute(PDO::ATTR_EMULATE_PREPARES, 0);
 
         // prepare & execute statement
-        $stmt = $conn->prepare("SELECT * FROM Users WHERE email=:email AND passw_hash=:pwhash");
-        $stmt->execute(['email'=>$_POST['email'], 'pwhash'=>hash('sha256', $_POST['pass'])]);
+        $stmt = $conn->prepare("SELECT * FROM Users WHERE email=:email AND auth_token=:auth");
+        $stmt->execute(['email'=>$_POST['email'], 'auth'=>hash(
+            'sha256',"%^&ShElLcHaTaUtH--".$_POST['email'].$_POST['pass']."--&%^sHeLlChAtAuTh"
+        )]);
         
         // fetch result
         $user = $stmt -> fetch() ?? null;
@@ -93,8 +94,8 @@ if(!$ready && $submit) {
         } else {
             // store for 1 min if remember me is not choosen, else store it for 20 days!
             $time = ( $_POST['checkbox'] ?? 0 ) ? 86400*20: 60;
-            setcookie("id", $user['id'], $time);
-            setcookie("auth", $user['passw_hash'], $time);
+            setcookie("id", $user['id'], time() + $time, "/");
+            setcookie("auth", $user['auth_token'], time() + $time, "/");
             header('location: /ShellChat/');
         }
 
